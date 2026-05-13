@@ -1,0 +1,1221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>SCOREBOARD</title>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   DESIGN TOKENS
+============================================================ */
+:root {
+  --bg:       #0a0a0a;
+  --bg1:      #111111;
+  --bg2:      #181818;
+  --bg3:      #222222;
+  --border:   #2a2a2a;
+  --border2:  #383838;
+  --gold:     #f0b429;
+  --gold2:    #e07c24;
+  --gold-dim: rgba(240,180,41,0.1);
+  --gold-glow:rgba(240,180,41,0.22);
+  --ink:      #f0ebe0;
+  --muted:    #606060;
+  --muted2:   #3a3a3a;
+  --danger:   #e84040;
+  --success:  #2dd4a0;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; }
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 500;
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Noise grain */
+body::after {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  background-size: 300px 300px;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* Ambient glow orbs */
+.amb {
+  position: fixed;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+}
+.amb-a {
+  width: 700px; height: 700px;
+  top: -280px; left: -180px;
+  background: radial-gradient(circle, rgba(240,180,41,0.04) 0%, transparent 65%);
+}
+.amb-b {
+  width: 500px; height: 500px;
+  bottom: -180px; right: -100px;
+  background: radial-gradient(circle, rgba(240,180,41,0.03) 0%, transparent 65%);
+}
+
+/* ============================================================
+   HEADER
+============================================================ */
+header {
+  position: relative;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  height: 62px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  flex-shrink: 0;
+}
+
+.wordmark {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.wordmark-badge {
+  width: 34px; height: 34px;
+  background: var(--gold);
+  border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 17px;
+  flex-shrink: 0;
+  box-shadow: 0 0 18px var(--gold-glow);
+}
+
+.wordmark-text {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 20px;
+  letter-spacing: 7px;
+  color: var(--ink);
+  text-transform: uppercase;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.round-display {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.round-lbl {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.round-val {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 26px;
+  color: var(--gold);
+  line-height: 1;
+  min-width: 26px;
+  text-align: right;
+}
+
+.game-tag {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--gold);
+  background: var(--gold-dim);
+  border: 1px solid rgba(240,180,41,0.28);
+  border-radius: 4px;
+  padding: 5px 11px;
+  text-transform: uppercase;
+}
+
+/* ============================================================
+   APP SHELL
+============================================================ */
+.shell {
+  position: relative;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: 290px 1fr;
+  height: calc(100vh - 62px);
+  overflow: hidden;
+}
+
+/* ============================================================
+   SIDEBAR
+============================================================ */
+.sidebar {
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  background: var(--bg);
+}
+
+.sidebar::-webkit-scrollbar { width: 0; }
+
+.sb-sec {
+  padding: 18px 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sb-title {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+/* Game type grid */
+.game-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 5px;
+}
+
+.gbtn {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 9px 4px 7px;
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+  color: var(--muted);
+  -webkit-tap-highlight-color: transparent;
+}
+.gbtn .gi { font-size: 17px; display: block; margin-bottom: 2px; }
+.gbtn .gl {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  display: block;
+}
+.gbtn:hover { background: var(--bg3); border-color: var(--border2); color: var(--ink); }
+.gbtn.active { background: var(--gold-dim); border-color: var(--gold); color: var(--gold); }
+
+/* Add player */
+.add-row {
+  display: flex;
+  gap: 7px;
+  margin-bottom: 12px;
+}
+
+.add-row input {
+  flex: 1;
+  min-width: 0;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 9px 12px;
+  color: var(--ink);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  outline: none;
+  transition: border-color 0.12s;
+}
+.add-row input:focus { border-color: var(--gold); }
+.add-row input::placeholder { color: var(--muted2); }
+
+.btn-add {
+  flex-shrink: 0;
+  background: var(--gold);
+  border: none;
+  border-radius: 7px;
+  padding: 9px 13px;
+  color: #111;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.12s, box-shadow 0.12s;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-add:hover { background: #f5c848; box-shadow: 0 0 14px var(--gold-glow); }
+.btn-add:active { background: var(--gold2); }
+
+/* Player roster */
+.roster { display: flex; flex-direction: column; gap: 5px; }
+
+.roster-empty {
+  font-size: 12px;
+  color: var(--muted);
+  padding: 8px 0 4px;
+  letter-spacing: 0.3px;
+}
+
+.rrow {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  background: var(--bg1);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 7px 10px;
+  animation: rIn 0.18s ease;
+}
+@keyframes rIn {
+  from { opacity:0; transform:translateX(-6px); }
+  to   { opacity:1; transform:translateX(0); }
+}
+.rswatch { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.rname { flex:1; font-size: 13px; font-weight: 600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.rremove {
+  background: none;
+  border: none;
+  color: var(--muted2);
+  cursor: pointer;
+  font-size: 17px;
+  line-height: 1;
+  padding: 1px 2px;
+  transition: color 0.12s;
+  -webkit-tap-highlight-color: transparent;
+}
+.rremove:hover { color: var(--danger); }
+
+/* Sidebar footer actions */
+.sb-actions {
+  padding: 14px 18px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-top: auto;
+  border-top: 1px solid var(--border);
+}
+
+.btn-end {
+  width: 100%;
+  background: var(--gold);
+  border: none;
+  border-radius: 8px;
+  padding: 13px;
+  color: #111;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.12s, box-shadow 0.12s;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-end:hover { background: #f5c848; box-shadow: 0 0 20px var(--gold-glow); }
+
+.btn-rst {
+  width: 100%;
+  background: transparent;
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  padding: 11px;
+  color: var(--muted);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 0.12s, color 0.12s;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-rst:hover { border-color: var(--danger); color: var(--danger); }
+
+/* ============================================================
+   MAIN PANEL
+============================================================ */
+.main {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Live board ── */
+.board-zone {
+  padding: 22px 26px 18px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.zone-hdr {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.pip {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--success);
+  flex-shrink: 0;
+  animation: pipPulse 2s infinite;
+}
+@keyframes pipPulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(45,212,160,0.5); }
+  50%      { box-shadow: 0 0 0 5px rgba(45,212,160,0); }
+}
+
+.zone-lbl {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+/* Score rows — the HERO */
+.srows { display: flex; flex-direction: column; gap: 7px; }
+
+.srow {
+  display: flex;
+  align-items: center;
+  background: var(--bg1);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+  min-height: 68px;
+  transition: border-color 0.25s, box-shadow 0.25s;
+}
+
+.srow.lead {
+  border-color: var(--gold);
+  box-shadow: 0 0 22px rgba(240,180,41,0.1), inset 0 0 30px rgba(240,180,41,0.025);
+}
+
+/* Animated fill bar */
+.sbar {
+  position: absolute;
+  top: 0; left: 0; bottom: 0;
+  width: 0%;
+  background: linear-gradient(90deg, rgba(240,180,41,0.06) 0%, transparent 100%);
+  transition: width 0.55s cubic-bezier(0.4,0,0.2,1);
+  border-radius: 10px;
+  pointer-events: none;
+}
+
+/* Color stripe */
+.sstripe {
+  width: 4px;
+  align-self: stretch;
+  flex-shrink: 0;
+  border-radius: 10px 0 0 10px;
+}
+
+/* Rank */
+.srank {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  color: var(--muted2);
+  width: 24px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+/* Name */
+.sname {
+  flex: 1;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 0 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Crown — only visible when .lead */
+.scrown { font-size: 15px; margin-right: 8px; display: none; flex-shrink: 0; }
+.srow.lead .scrown { display: block; }
+
+/* THE BIG NUMBER */
+.snum {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 46px;
+  line-height: 1;
+  flex-shrink: 0;
+  text-align: right;
+  min-width: 88px;
+  padding-right: 16px;
+}
+
+.srow.bump .snum {
+  animation: numBump 0.32s cubic-bezier(0.36,0.07,0.19,0.97);
+}
+@keyframes numBump {
+  0%  { transform: scale(1); }
+  35% { transform: scale(1.18); }
+  100%{ transform: scale(1); }
+}
+
+.board-empty {
+  font-size: 14px;
+  color: var(--muted);
+  padding: 24px 0 8px;
+  letter-spacing: 0.3px;
+}
+
+/* ── Entry section ── */
+.entry-zone {
+  padding: 18px 26px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.entry-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 13px;
+}
+
+.entry-lbl {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.btn-undo {
+  background: transparent;
+  border: 1px solid var(--border2);
+  border-radius: 5px;
+  padding: 5px 11px;
+  color: var(--muted);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: border-color 0.12s, color 0.12s;
+  text-transform: uppercase;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-undo:hover { border-color: var(--danger); color: var(--danger); }
+.btn-undo:disabled { opacity: 0.28; cursor: not-allowed; }
+
+.erows { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+
+.erow {
+  display: flex;
+  align-items: center;
+  background: var(--bg1);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  gap: 10px;
+}
+
+.eswatch { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.ename {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stepper { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+
+.sbtn {
+  width: 34px; height: 34px;
+  border-radius: 6px;
+  border: 1px solid var(--border2);
+  background: var(--bg2);
+  color: var(--ink);
+  font-size: 19px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.1s, border-color 0.1s;
+  flex-shrink: 0;
+  line-height: 1;
+  -webkit-tap-highlight-color: transparent;
+}
+.sbtn:hover { background: var(--bg3); border-color: var(--gold); }
+.sbtn:active { background: var(--gold-dim); }
+
+.sinput {
+  width: 58px;
+  height: 34px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  text-align: center;
+  color: var(--ink);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.12s;
+  -moz-appearance: textfield;
+}
+.sinput:focus { border-color: var(--gold); }
+.sinput::-webkit-outer-spin-button,
+.sinput::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+.entry-empty { font-size: 13px; color: var(--muted); padding: 8px 0 2px; }
+
+.btn-submit {
+  width: 100%;
+  background: linear-gradient(90deg, var(--gold) 0%, var(--gold2) 100%);
+  border: none;
+  border-radius: 8px;
+  padding: 14px;
+  color: #0a0a0a;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: opacity 0.12s, box-shadow 0.12s;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-submit:hover { opacity: 0.9; box-shadow: 0 0 22px var(--gold-glow); }
+.btn-submit:active { opacity: 0.82; }
+.btn-submit:disabled { opacity: 0.28; cursor: not-allowed; box-shadow: none; }
+
+/* ── History ── */
+.hist-zone {
+  flex: 1;
+  overflow-y: auto;
+  padding: 18px 26px 24px;
+}
+.hist-zone::-webkit-scrollbar { width: 3px; }
+.hist-zone::-webkit-scrollbar-track { background: transparent; }
+.hist-zone::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+.hist-title {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.hist-empty { font-size: 13px; color: var(--muted); }
+
+.hentry {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 9px 0;
+  border-bottom: 1px solid rgba(42,42,42,0.7);
+  animation: hIn 0.22s ease;
+}
+@keyframes hIn {
+  from { opacity:0; transform:translateY(4px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+.hentry:last-child { border-bottom: none; }
+
+.hrnd {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+  width: 38px;
+  padding-top: 3px;
+  flex-shrink: 0;
+  letter-spacing: 0.5px;
+}
+
+.hpills { display: flex; flex-wrap: wrap; gap: 4px; }
+
+.hpill {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 3px 9px 3px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+.hdot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+.hpts { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--gold); margin-left: 2px; }
+
+/* ============================================================
+   WINNER OVERLAY
+============================================================ */
+.woverlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(10,10,10,0.91);
+  z-index: 500;
+  align-items: center;
+  justify-content: center;
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+.woverlay.show { display: flex; }
+
+.wmodal {
+  position: relative;
+  background: var(--bg1);
+  border: 1px solid var(--border2);
+  border-radius: 18px;
+  padding: 48px 56px 42px;
+  text-align: center;
+  max-width: 440px;
+  width: 90%;
+  animation: wIn 0.42s cubic-bezier(0.16,1,0.3,1);
+  overflow: hidden;
+}
+.wmodal::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, var(--gold) 30%, var(--gold2) 70%, transparent 100%);
+}
+
+@keyframes wIn {
+  from { opacity:0; transform:scale(0.82) translateY(16px); }
+  to   { opacity:1; transform:scale(1) translateY(0); }
+}
+
+.wglow {
+  position: absolute;
+  top: -80px; left: 50%;
+  transform: translateX(-50%);
+  width: 320px; height: 320px;
+  background: radial-gradient(circle, rgba(240,180,41,0.1) 0%, transparent 65%);
+  pointer-events: none;
+}
+
+.wtrophy { font-size: 52px; display: block; margin-bottom: 14px; }
+.wlbl { font-size: 10px; font-weight: 700; letter-spacing: 5px; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; }
+.wname { font-family: 'Black Han Sans', sans-serif; font-size: 50px; letter-spacing: 3px; line-height: 1; margin-bottom: 10px; }
+.wscore { font-family: 'Share Tech Mono', monospace; font-size: 15px; color: var(--muted); margin-bottom: 34px; }
+.wscore strong { color: var(--gold); font-size: 20px; }
+
+.wbtns { display: flex; gap: 10px; justify-content: center; }
+
+.wbtn-primary {
+  background: var(--gold);
+  border: none;
+  border-radius: 7px;
+  padding: 12px 26px;
+  color: #111;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.12s;
+  -webkit-tap-highlight-color: transparent;
+}
+.wbtn-primary:hover { background: #f5c848; }
+
+.wbtn-ghost {
+  background: transparent;
+  border: 1px solid var(--border2);
+  border-radius: 7px;
+  padding: 12px 22px;
+  color: var(--muted);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 0.12s, color 0.12s;
+  -webkit-tap-highlight-color: transparent;
+}
+.wbtn-ghost:hover { border-color: var(--danger); color: var(--danger); }
+
+/* ============================================================
+   PLAYER COLOR TEXT CLASSES
+============================================================ */
+.pc0{color:#ff5f5f;} .pc1{color:#ff9f43;} .pc2{color:#ffd32a;}
+.pc3{color:#54a0ff;} .pc4{color:#5fff8a;} .pc5{color:#c56bff;}
+.pc6{color:#00d2d3;} .pc7{color:#ff6bab;}
+
+/* ============================================================
+   MOBILE
+============================================================ */
+@media (max-width: 680px) {
+  header { height: 54px; padding: 0 14px; }
+  .wordmark-text { font-size: 17px; letter-spacing: 5px; }
+  .round-val { font-size: 22px; }
+
+  .shell {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+    height: auto;
+    overflow: visible;
+  }
+
+  .sidebar {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    overflow-y: visible;
+  }
+
+  .main { overflow: visible; }
+
+  .board-zone { padding: 14px 14px 12px; }
+  .entry-zone { padding: 14px 14px; }
+  .hist-zone  { padding: 14px 14px 20px; overflow-y: visible; flex: none; }
+
+  .snum { font-size: 38px; min-width: 72px; }
+  .srow { min-height: 58px; }
+
+  .sb-actions { padding: 12px 14px 16px; }
+  .sb-sec { padding: 14px 14px; }
+  .wmodal { padding: 36px 24px 30px; }
+  .wname { font-size: 38px; }
+}
+</style>
+</head>
+<body>
+
+<div class="amb amb-a"></div>
+<div class="amb amb-b"></div>
+
+<!-- ===== HEADER ===== -->
+<header>
+  <div class="wordmark">
+    <div class="wordmark-badge">&#127942;</div>
+    <div class="wordmark-text">Scoreboard</div>
+  </div>
+  <div class="header-right">
+    <div class="round-display">
+      <span class="round-lbl">Round</span>
+      <span class="round-val" id="roundNum">0</span>
+    </div>
+    <div class="game-tag" id="gameTag">Custom</div>
+  </div>
+</header>
+
+<!-- ===== SHELL ===== -->
+<div class="shell">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+
+    <div class="sb-sec">
+      <div class="sb-title">Game Type</div>
+      <div class="game-grid">
+        <button class="gbtn active" data-game="Custom"     onclick="setGame(this)"><span class="gi">&#127918;</span><span class="gl">Custom</span></button>
+        <button class="gbtn"        data-game="Basketball" onclick="setGame(this)"><span class="gi">&#127936;</span><span class="gl">Hoops</span></button>
+        <button class="gbtn"        data-game="Card Game"  onclick="setGame(this)"><span class="gi">&#127183;</span><span class="gl">Cards</span></button>
+        <button class="gbtn"        data-game="Bowling"    onclick="setGame(this)"><span class="gi">&#127923;</span><span class="gl">Bowling</span></button>
+        <button class="gbtn"        data-game="Golf"       onclick="setGame(this)"><span class="gi">&#9971;&#65039;</span><span class="gl">Golf</span></button>
+        <button class="gbtn"        data-game="Darts"      onclick="setGame(this)"><span class="gi">&#127919;</span><span class="gl">Darts</span></button>
+      </div>
+    </div>
+
+    <div class="sb-sec">
+      <div class="sb-title">Players <span id="pCount" style="color:var(--muted2)">(0&#47;8)</span></div>
+      <div class="add-row">
+        <input type="text" id="pInput" placeholder="Enter name..." maxlength="16"
+          onkeydown="if(event.key==='Enter')addPlayer()">
+        <button class="btn-add" onclick="addPlayer()">+ Add</button>
+      </div>
+      <div class="roster" id="roster">
+        <div class="roster-empty" id="rosterEmpty">No players yet</div>
+      </div>
+    </div>
+
+    <div class="sb-actions">
+      <button class="btn-end" onclick="endGame()">&#127942; End Game</button>
+      <button class="btn-rst" onclick="resetGame()">&#8635; Reset Scores</button>
+    </div>
+
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- Live board -->
+    <div class="board-zone">
+      <div class="zone-hdr">
+        <div class="pip"></div>
+        <div class="zone-lbl">Live Scores</div>
+      </div>
+      <div class="srows" id="srows">
+        <div class="board-empty">Add players to begin.</div>
+      </div>
+    </div>
+
+    <!-- Entry -->
+    <div class="entry-zone">
+      <div class="entry-hdr">
+        <div class="entry-lbl">&#9889; Round Scores</div>
+        <button class="btn-undo" id="undoBtn" onclick="undoRound()" disabled>&#8617; Undo</button>
+      </div>
+      <div class="erows" id="erows">
+        <div class="entry-empty">Add players to enter scores.</div>
+      </div>
+      <button class="btn-submit" id="submitBtn" onclick="submitRound()" disabled>
+        Submit Round
+      </button>
+    </div>
+
+    <!-- History -->
+    <div class="hist-zone">
+      <div class="hist-title">&#128203; Round History</div>
+      <div id="histLog"><div class="hist-empty">No rounds played yet.</div></div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ===== WINNER OVERLAY ===== -->
+<div class="woverlay" id="woverlay">
+  <div class="wmodal">
+    <div class="wglow"></div>
+    <span class="wtrophy">&#127942;</span>
+    <div class="wlbl">Winner</div>
+    <div class="wname" id="wName">&#8212;</div>
+    <div class="wscore">Final Score &nbsp;<strong id="wScore">0</strong></div>
+    <div class="wbtns">
+      <button class="wbtn-primary" onclick="closeWinner()">&#8635; Play Again</button>
+      <button class="wbtn-ghost"   onclick="newGame()">&#128465; New Game</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SCRIPT ===== -->
+<script>
+/* ============================================================
+   CONSTANTS — pure hex, never CSS custom props in JS style attrs
+============================================================ */
+var COLORS = [
+  '#ff5f5f','#ff9f43','#ffd32a',
+  '#54a0ff','#5fff8a','#c56bff',
+  '#00d2d3','#ff6bab'
+];
+var CLS = ['pc0','pc1','pc2','pc3','pc4','pc5','pc6','pc7'];
+
+/* ============================================================
+   STATE
+============================================================ */
+var S = {
+  game:    'Custom',
+  players: [],
+  round:   0,
+  history: []
+};
+
+/* ============================================================
+   HELPERS
+============================================================ */
+function gid(id)    { return document.getElementById(id); }
+function txt(id, v) { var e=gid(id); if(e) e.textContent=v; }
+function dis(id, v) { var e=gid(id); if(e) e.disabled=!!v; }
+
+function esc(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+    .replace(/'/g,'&#039;');
+}
+
+/* ============================================================
+   GAME TYPE
+============================================================ */
+function setGame(btn) {
+  var all = document.querySelectorAll('.gbtn');
+  for (var i=0;i<all.length;i++) all[i].classList.remove('active');
+  btn.classList.add('active');
+  S.game = btn.getAttribute('data-game');
+  txt('gameTag', S.game);
+}
+
+/* ============================================================
+   PLAYERS
+============================================================ */
+function addPlayer() {
+  var inp = gid('pInput');
+  if (!inp) return;
+  var name = inp.value.trim();
+  if (!name || S.players.length >= 8) return;
+  for (var k=0;k<S.players.length;k++) {
+    if (S.players[k].name.toLowerCase()===name.toLowerCase()) {
+      inp.style.borderColor='#e84040';
+      setTimeout(function(){ inp.style.borderColor=''; },700);
+      return;
+    }
+  }
+  var idx = S.players.length;
+  S.players.push({ name:name, color:COLORS[idx], cls:CLS[idx], total:0 });
+  inp.value = '';
+  render();
+}
+
+function removePlayer(idx) {
+  S.players.splice(idx,1);
+  for (var i=0;i<S.players.length;i++) {
+    S.players[i].color = COLORS[i];
+    S.players[i].cls   = CLS[i];
+  }
+  render();
+}
+
+/* ============================================================
+   RENDER
+============================================================ */
+function render() {
+  renderRoster();
+  renderBoard();
+  renderEntry();
+  renderHistory();
+  txt('pCount','('+S.players.length+'/8)');
+  txt('roundNum', S.round);
+  dis('submitBtn', S.players.length===0);
+  dis('undoBtn',   S.history.length===0);
+}
+
+/* -- Roster -- */
+function renderRoster() {
+  var el = gid('roster');
+  if (!el) return;
+  if (!S.players.length) {
+    el.innerHTML = '<div class="roster-empty" id="rosterEmpty">No players yet</div>';
+    return;
+  }
+  var h = '';
+  for (var i=0;i<S.players.length;i++) {
+    var p = S.players[i];
+    h += '<div class="rrow">' +
+      '<div class="rswatch" style="background:'+p.color+'"></div>' +
+      '<span class="rname">'+esc(p.name)+'</span>' +
+      '<button class="rremove" onclick="removePlayer('+i+')" title="Remove">&#215;</button>' +
+      '</div>';
+  }
+  el.innerHTML = h;
+}
+
+/* -- Scoreboard -- */
+function renderBoard() {
+  var el = gid('srows');
+  if (!el) return;
+  if (!S.players.length) {
+    el.innerHTML = '<div class="board-empty">Add players to begin.</div>';
+    return;
+  }
+
+  var isGolf = (S.game === 'Golf');
+  var sorted = S.players.slice(0).sort(function(a,b){
+    return isGolf ? a.total-b.total : b.total-a.total;
+  });
+
+  var maxAbs = 0;
+  for (var t=0;t<S.players.length;t++) {
+    var a = Math.abs(S.players[t].total);
+    if (a>maxAbs) maxAbs=a;
+  }
+
+  var h = '';
+  for (var i=0;i<sorted.length;i++) {
+    var p      = sorted[i];
+    var isLead = (i===0 && S.round>0);
+    var pct    = maxAbs>0 ? Math.round(Math.abs(p.total)/maxAbs*100) : 0;
+    /* Use safe id: index-based, resolved after render via data attr */
+    h += '<div class="srow'+(isLead?' lead':'')+'" data-pname="'+esc(p.name)+'">' +
+      '<div class="sbar" style="width:'+pct+'%"></div>' +
+      '<div class="sstripe" style="background:'+p.color+'"></div>' +
+      '<div class="srank">'+(i+1)+'</div>' +
+      '<div class="sname">'+esc(p.name)+'</div>' +
+      '<div class="scrown">&#128081;</div>' +
+      '<div class="snum '+p.cls+'">'+p.total+'</div>' +
+      '</div>';
+  }
+  el.innerHTML = h;
+}
+
+/* -- Entry rows -- */
+function renderEntry() {
+  var el = gid('erows');
+  if (!el) return;
+  if (!S.players.length) {
+    el.innerHTML = '<div class="entry-empty">Add players to enter scores.</div>';
+    return;
+  }
+  var h = '';
+  for (var i=0;i<S.players.length;i++) {
+    var p = S.players[i];
+    h += '<div class="erow">' +
+      '<div class="eswatch" style="background:'+p.color+'"></div>' +
+      '<div class="ename">'+esc(p.name)+'</div>' +
+      '<div class="stepper">' +
+        '<button class="sbtn" onclick="step('+i+',-1)">&#8722;</button>' +
+        '<input class="sinput" type="number" id="ei-'+i+'" value="0">' +
+        '<button class="sbtn" onclick="step('+i+',1)">+</button>' +
+      '</div>' +
+      '</div>';
+  }
+  el.innerHTML = h;
+}
+
+function step(idx, delta) {
+  var inp = gid('ei-'+idx);
+  if (!inp) return;
+  var v = parseInt(inp.value,10);
+  if (isNaN(v)) v=0;
+  inp.value = v+delta;
+}
+
+/* -- History -- */
+function renderHistory() {
+  var el = gid('histLog');
+  if (!el) return;
+  if (!S.history.length) {
+    el.innerHTML = '<div class="hist-empty">No rounds played yet.</div>';
+    return;
+  }
+  var h = '';
+  for (var i=S.history.length-1;i>=0;i--) {
+    var entry = S.history[i];
+    h += '<div class="hentry"><div class="hrnd">R'+entry.round+'</div><div class="hpills">';
+    for (var s=0;s<entry.scores.length;s++) {
+      var sc  = entry.scores[s];
+      var col = sc.color || COLORS[s] || '#888';
+      var pts = sc.pts>=0 ? ('+'+sc.pts) : String(sc.pts);
+      h += '<div class="hpill">' +
+        '<div class="hdot" style="background:'+col+'"></div>' +
+        esc(sc.name) +
+        '<span class="hpts">'+pts+'</span>' +
+        '</div>';
+    }
+    h += '</div></div>';
+  }
+  el.innerHTML = h;
+}
+
+/* ============================================================
+   SUBMIT ROUND
+============================================================ */
+function submitRound() {
+  if (!S.players.length) return;
+  S.round++;
+  var scores = [];
+  for (var i=0;i<S.players.length;i++) {
+    var inp = gid('ei-'+i);
+    var v   = inp ? parseInt(inp.value,10) : 0;
+    if (isNaN(v)) v=0;
+    S.players[i].total += v;
+    scores.push({ name:S.players[i].name, pts:v, color:S.players[i].color });
+  }
+  S.history.push({ round:S.round, scores:scores });
+
+  render();
+
+  /* Bump each score row after render */
+  var rows = document.querySelectorAll('.srow');
+  for (var j=0;j<rows.length;j++) {
+    (function(row){
+      row.classList.remove('bump');
+      setTimeout(function(){ row.classList.add('bump'); },16);
+    })(rows[j]);
+  }
+
+  /* Reset inputs */
+  for (var k=0;k<S.players.length;k++) {
+    var ei = gid('ei-'+k);
+    if (ei) ei.value=0;
+  }
+}
+
+/* ============================================================
+   UNDO
+============================================================ */
+function undoRound() {
+  if (!S.history.length) return;
+  var last = S.history.pop();
+  for (var i=0;i<last.scores.length;i++) {
+    if (S.players[i]) S.players[i].total -= last.scores[i].pts;
+  }
+  S.round--;
+  render();
+}
+
+/* ============================================================
+   END GAME
+============================================================ */
+function endGame() {
+  if (!S.players.length || S.round===0) return;
+  var isGolf = (S.game==='Golf');
+  var best   = S.players.slice(0).sort(function(a,b){
+    return isGolf ? a.total-b.total : b.total-a.total;
+  })[0];
+  var wn = gid('wName');
+  var ws = gid('wScore');
+  if (wn) { wn.textContent=best.name.toUpperCase(); wn.style.color=best.color; }
+  if (ws) ws.textContent=best.total;
+  var ov = gid('woverlay');
+  if (ov) ov.classList.add('show');
+}
+
+function closeWinner() {
+  var ov = gid('woverlay');
+  if (ov) ov.classList.remove('show');
+}
+
+function newGame() {
+  closeWinner();
+  S.players = [];
+  S.round   = 0;
+  S.history = [];
+  S.game    = 'Custom';
+  var all   = document.querySelectorAll('.gbtn');
+  for (var i=0;i<all.length;i++) all[i].classList.remove('active');
+  var first = all[0];
+  if (first) first.classList.add('active');
+  txt('gameTag','Custom');
+  render();
+}
+
+function resetGame() {
+  closeWinner();
+  for (var i=0;i<S.players.length;i++) S.players[i].total=0;
+  S.round=0;
+  S.history=[];
+  render();
+}
+
+/* ============================================================
+   INIT
+============================================================ */
+document.addEventListener('DOMContentLoaded', function(){ render(); });
+</script>
+</body>
+</html>
